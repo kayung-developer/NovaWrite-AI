@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaWrite AI - Premier AI Writing Assistant</title>
+    <!-- Firebase SDK -->
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.22.1/firebase-functions-compat.js"></script>
+    <style>
+        :root {
+            --primary-color: #4F46E5; /* Indigo 600 */
+            --primary-color-rgb: 79, 70, 229;
+            --primary-color-darker: #4338CA; /* Indigo 700 */
+            --secondary-color: #10B981; /* Emerald 500 */
+            --secondary-color-rgb: 16, 185, 129;
+            --secondary-color-darker: #059669; /* Emerald 600 */
+            --background-color: #F9FAFB; /* Gray 50 */
+            --surface-color: #FFFFFF; /* White */
+            --text-color: #1F2937; /* Gray 800 */
+            --muted-text-color: #6B7280; /* Gray 500 */
+            --border-color: #E5E7EB; /* Gray 200 */
+            --danger-color: #EF4444; /* Red 500 */
+            --danger-color-rgb: 239, 68, 68;
+            --success-color: #22C55E; /* Green 500 */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --border-radius: 0.5rem;
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s;
+            --primary-color-light: #E0E7FF; /* Indigo 100 */
+        }
+        [data-theme="dark"] {
+            --primary-color: #6366F1; /* Indigo 500 */
+            --primary-color-rgb: 99, 102, 241;
+            --primary-color-darker: #4F46E5; /* Indigo 600 */
+            --secondary-color: #34D399; /* Emerald 400 */
+            --secondary-color-rgb: 52, 211, 153;
+            --secondary-color-darker: #10B981; /* Emerald 500 */
+            --background-color: #111827; /* Gray 900 */
+            --surface-color: #1F2937; /* Gray 800 */
+            --text-color: #F3F4F6; /* Gray 100 */
+            --muted-text-color: #9CA3AF; /* Gray 400 */
+            --border-color: #374151; /* Gray 700 */
+            --primary-color-light: #312E81; /* Indigo 800 */
+        }
+        *, ::before, *::after { /* Corrected selector */
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 0;
+        }
+        header {
+            background-color: var(--surface-color);
+            box-shadow: var(--box-shadow);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color var(--transition-speed);
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 1.5rem;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-weight: 500;
+            transition: color 0.2s, border-bottom-color 0.2s;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid transparent;
+        }
+        nav ul li a:hover, nav ul li a.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .nav-buttons button, .auth-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.1s ease;
+            margin-left: 0.5rem;
+        }
+        .nav-buttons button:hover, .auth-button:hover {
+            background-color: var(--primary-color-darker);
+        }
+        .nav-buttons button:active, .auth-button:active {
+            transform: scale(0.97);
+        }
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.1s ease;
+        }
+        .theme-toggle:hover {
+            background-color: rgba(var(--primary-color-rgb), 0.1);
+        }
+         .theme-toggle:active {
+            transform: scale(0.95);
+        }
+        main {
+            flex-grow: 1;
+        }
+        section {
+            padding: 4rem 0;
+        }
+        section:nth-child(even) {
+            background-color: var(--surface-color);
+            transition: background-color var(--transition-speed);
+        }
+        .hero {
+            text-align: center;
+            padding: 5rem 0;
+            background: linear-gradient(135deg, rgba(var(--primary-color-rgb),0.05), rgba(var(--secondary-color-rgb),0.05));
+        }
+        .hero h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            animation: fadeInDown 1s ease-out;
+        }
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--muted-text-color);
+            margin-bottom: 2.5rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            animation: fadeInUp 1s ease-out 0.3s;
+            animation-fill-mode: backwards;
+        }
+        .cta-button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 0.9rem 2.2rem;
+            font-size: 1.15rem;
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            transition: background-color 0.2s, transform 0.2s;
+            display: inline-block;
+            animation: pulse 2s infinite 1s;
+        }
+        .cta-button:hover {
+            background-color: var(--secondary-color-darker);
+            transform: translateY(-3px);
+        }
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            color: var(--primary-color);
+        }
+        .features-grid, .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .feature-card, .pricing-card {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border-color);
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        .feature-card:hover, .pricing-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: var(--box-shadow-lg);
+        }
+        .feature-card h3, .pricing-card h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+        .feature-card p, .pricing-card p, .pricing-card ul {
+            color: var(--muted-text-color);
+            font-size: 0.95rem;
+        }
+        .pricing-card ul {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .pricing-card ul li {
+            margin-bottom: 0.75rem;
+            padding-left: 1.8em;
+            position: relative;
+        }
+        .pricing-card ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+        .price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 0.5rem;
+        }
+        .price span {
+            font-size: 0.9rem;
+            font-weight: 400;
+            color: var(--muted-text-color);
+        }
+        .select-plan-button {
+            display: block;
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem;
+            border: none;
+            border-radius: var(--border-radius);
+            text-align: center;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s ease;
+        }
+        .select-plan-button:hover {
+            background-color: var(--primary-color-darker);
+        }
+         .select-plan-button:active {
+            transform: scale(0.98);
+        }
+        .select-plan-button.disabled {
+            background-color: var(--muted-text-color);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+         .pricing-card.recommended {
+            border: 2px solid var(--secondary-color);
+            position: relative;
+            transform: scale(1.05);
+        }
+        .pricing-card.recommended:hover {
+            transform: translateY(-8px) scale(1.07);
+        }
+        .pricing-card.recommended::before {
+            content: "Most Popular";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--border-radius);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .writer-interface {
+            background-color: var(--surface-color);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border-color);
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="password"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            transition: border-color 0.2s, box-shadow 0.2s, background-color var(--transition-speed), color var(--transition-speed);
+        }
+        .form-group textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="email"]:focus,
+        .form-group input[type="password"]:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.2);
+        }
+        .form-group input.error, .form-group textarea.error {
+            border-color: var(--danger-color);
+            box-shadow: 0 0 0 3px rgba(var(--danger-color-rgb), 0.2);
+        }
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            display: block;
+        }
+        .writer-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .writer-controls button {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .writer-controls button:hover {
+            background-color: var(--secondary-color-darker);
+        }
+        .writer-controls button:active {
+            transform: scale(0.98);
+        }
+        .writer-controls button.proofread-btn {
+            background-color: var(--primary-color);
+        }
+        .writer-controls button.proofread-btn:hover {
+            background-color: var(--primary-color-darker);
+        }
+        .writer-controls button:disabled {
+            background-color: var(--muted-text-color);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .credits-display {
+            text-align: right;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            color: var(--muted-text-color);
+        }
+        .credits-display span {
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+        .output-area {
+            margin-top: 1.5rem;
+        }
+        .output-area h4 {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        #generatedContentOutput {
+            width: 100%;
+            min-height: 200px;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background-color: var(--background-color);
+            white-space: pre-wrap;
+            overflow-y: auto;
+            color: var(--text-color);
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), color var(--transition-speed);
+            line-height: 1.7;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(var(--secondary-color-rgb), 0.6); }
+            70% { box-shadow: 0 0 0 10px rgba(var(--secondary-color-rgb), 0); }
+            100% { box-shadow: 0 0 0 0 rgba(var(--secondary-color-rgb), 0); }
+        }
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            background-color: var(--surface-color);
+            color: var(--muted-text-color);
+            border-top: 1px solid var(--border-color);
+            margin-top: auto;
+            transition: background-color var(--transition-speed), border-color var(--transition-speed), color var(--transition-speed);
+        }
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity var(--transition-speed) ease-in-out;
+        }
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+        .modal-content {
+            background-color: var(--surface-color);
+            margin: auto;
+            padding: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--box-shadow-lg);
+            position: relative;
+            transform: translateY(-20px) scale(0.95);
+            opacity: 0;
+            transition: transform var(--transition-speed) ease-in-out, opacity var(--transition-speed) ease-in-out, background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        .modal.active .modal-content {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+        .close-modal {
+            color: var(--muted-text-color);
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s, transform 0.2s;
+            line-height: 1;
+        }
+        .close-modal:hover, .close-modal:focus {
+            color: var(--text-color);
+            transform: rotate(90deg);
+        }
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            text-align: center;
+        }
+        .modal-content .form-group button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.85rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+            font-size: 1.05rem;
+            transition: background-color 0.2s, transform 0.1s ease;
+        }
+        .modal-content .form-group button:hover {
+            background-color: var(--primary-color-darker);
+        }
+        .modal-content .form-group button:active {
+            transform: scale(0.98);
+        }
+        .switch-auth-mode {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .switch-auth-mode a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .switch-auth-mode a:hover {
+            text-decoration: underline;
+        }
+        .template-library-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0.5rem;
+        }
+        .template-item {
+            padding: 0.85rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s, color 0.2s;
+            border-radius: calc(var(--border-radius) - 2px);
+        }
+        .template-item:last-child {
+            border-bottom: none;
+        }
+        .template-item:hover {
+            background-color: rgba(var(--primary-color-rgb), 0.05);
+        }
+        .template-item.selected {
+            background-color: var(--primary-color-light);
+            color: var(--primary-color);
+            font-weight: 600;
+            border-left: 4px solid var(--primary-color);
+            padding-left: calc(1rem - 4px);
+        }
+        .secondary-btn {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            padding: 0.6rem 1.2rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .secondary-btn:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .hero p {
+                font-size: 1rem;
+            }
+            nav ul {
+                display: none;
+            }
+            .nav-buttons {
+                display: flex;
+            }
+            .features-grid, .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+            .pricing-card.recommended {
+                transform: scale(1);
+            }
+            .pricing-card.recommended:hover {
+                transform: translateY(-8px) scale(1.02);
+            }
+            .writer-controls {
+                flex-direction: column;
+            }
+            .writer-controls button {
+                width: 100%;
+            }
+        }
+         .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(120px);
+            background-color: var(--text-color);
+            color: var(--background-color);
+            padding: 1rem 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow-lg);
+            z-index: 1002;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+            font-weight: 500;
+            min-width: 250px;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .toast.success {
+            background-color: var(--success-color);
+            color: white;
+        }
+        .toast.error {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        .toast.info {
+            background-color: var(--primary-color);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="#" class="logo">NovaWrite AI</a>
+            <ul>
+                <li><a href="#hero" class="nav-link active">Home</a></li>
+                <li><a href="#features" class="nav-link">Features</a></li>
+                <li><a href="#pricing" class="nav-link">Pricing</a></li>
+                <li><a href="#writer" class="nav-link">Write</a></li>
+            </ul>
+            <div class="nav-buttons">
+                <button id="themeToggleBtn" class="theme-toggle" aria-label="Toggle theme">🌙</button>
+                <button id="loginBtn" class="auth-button">Login</button>
+                <button id="signupBtn" class="auth-button">Sign Up</button>
+                <div id="userAccountNav" style="display: none;">
+                    <span id="userCreditsNav" style="margin-right: 1rem; color: var(--muted-text-color); display:flex; align-items:center;"></span>
+                    <button id="logoutBtn" class="auth-button">Logout</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <section id="hero" class="hero">
+            <div class="container">
+                <h1>Unleash Your Content Creation Superpowers</h1>
+                <p>NovaWrite AI is your intelligent partner for crafting high-quality, engaging content across 150+ templates and 140+ languages. Powered by next-gen AI models.</p>
+                <a href="#writer" class="cta-button">Start Writing Now</a>
+            </div>
+        </section>
+        <section id="features">
+            <div class="container">
+                <h2 class="section-title">Key Features of NovaWrite AI</h2>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <h3>Extensive Template Library</h3>
+                        <p>Over 150 pre-designed templates for blog posts, social media, white papers, SEO content, e-commerce descriptions, HR documents, and educational materials. Regularly updated.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>AI-Powered Content Generation</h3>
+                        <p>Leverages GPT-4, Gemini, Claude, and DeepSeek to generate tailored, plagiarism-free, grammatically correct content ready for immediate use.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Proofreading & Editing</h3>
+                        <p>Robust tools analyze your work, offering suggestions to enhance clarity, professionalism, and impact. (Premium & Ultimate)</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Multilingual Support</h3>
+                        <p>Create and translate content in over 140 languages, reaching a global audience effortlessly. (Premium & Ultimate for full access)</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Cross-Platform Accessibility</h3>
+                        <p>Work seamlessly across various devices and web browsers. Your work, anywhere.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Advanced AI Model Integration</h3>
+                        <p>Utilizes a suite of top-tier AI models for superior contextual understanding and response accuracy. (Ultimate for full model choice)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="pricing">
+            <div class="container">
+                <h2 class="section-title">Flexible Pricing Plans</h2>
+                <div class="pricing-grid">
+                    <div class="pricing-card" data-plan="Basic">
+                        <h3>Basic</h3>
+                        <p class="price">$9 <span>/ month</span></p>
+                        <p>For casual users and exploring features.</p>
+                        <ul>
+                            <li>10,000 AI Credits/month</li>
+                            <li>Access to 50 Templates</li>
+                            <li>Standard AI Model</li>
+                            <li>Limited Language Support (5 languages)</li>
+                            <li>Basic Proofreading</li>
+                        </ul>
+                        <button class="select-plan-button" data-plan-name="Basic">Choose Basic</button>
+                    </div>
+                    <div class="pricing-card recommended" data-plan="Premium">
+                        <h3>Premium</h3>
+                        <p class="price">$29 <span>/ month</span></p>
+                        <p>For professionals and frequent content creators.</p>
+                        <ul>
+                            <li>50,000 AI Credits/month</li>
+                            <li>Access to 150+ Templates</li>
+                            <li>Advanced AI Models (GPT-4, Gemini access)</li>
+                            <li>Full Language Support (70 languages)</li>
+                            <li>Advanced Proofreading & Editing</li>
+                            <li>Priority Support</li>
+                        </ul>
+                        <button class="select-plan-button" data-plan-name="Premium">Choose Premium</button>
+                    </div>
+                    <div class="pricing-card" data-plan="Ultimate">
+                        <h3>Ultimate</h3>
+                        <p class="price">$79 <span>/ month</span></p>
+                        <p>For power users and teams requiring maximum capabilities.</p>
+                        <ul>
+                            <li>Unlimited AI Credits*</li>
+                            <li>Access to 150+ Templates + Custom Templates</li>
+                            <li>Full Suite of AI Models (GPT-4, Gemini, Claude, DeepSeek selector)</li>
+                            <li>Full Language Support (140+ languages) + Translation</li>
+                            <li>Advanced Proofreading & Editing Suite</li>
+                            <li>Team Collaboration Tools (Conceptual)</li>
+                            <li>API Access (Conceptual)</li>
+                        </ul>
+                        <button class="select-plan-button" data-plan-name="Ultimate">Choose Ultimate</button>
+                        <p style="font-size: 0.75rem; color: var(--muted-text-color); margin-top: 0.5rem;">*Fair use policy applies</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="writer">
+            <div class="container">
+                <h2 class="section-title">AI Writing Assistant</h2>
+                <div id="writerApp" class="writer-interface">
+                    <div class="credits-display">Credits: <span id="userCredits">N/A</span></div>
+                    <div class="form-group">
+                        <label for="contentTopic">Content Topic / Prompt:</label>
+                        <input type="text" id="contentTopic" placeholder="e.g., Benefits of remote work for productivity">
+                    </div>
+                    <div class="form-group">
+                        <label for="selectedTemplateDisplay">Template:</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="selectedTemplateDisplay" placeholder="No template selected" readonly style="flex-grow: 1;">
+                            <button id="openTemplateLibraryBtn" class="secondary-btn">Browse Templates</button>
+                        </div>
+                    </div>
+                     <div class="form-group">
+                        <label for="languageSelect">Language:</label>
+                        <select id="languageSelect" aria-label="Select language for content generation">
+                            <option value="en">English</option>
+                            {/* More languages will be populated by JS */}
+                        </select>
+                    </div>
+                    <div class="form-group" id="aiModelSelectorGroup" style="display:none;">
+                        <label for="aiModelSelect">AI Model (Ultimate Plan):</label>
+                        <select id="aiModelSelect" aria-label="Select AI Model for Ultimate Plan users">
+                            <option value="gpt-4">GPT-4</option>
+                            <option value="gemini-pro">Google Gemini Pro</option> <!-- Updated value for clarity -->
+                            <option value="claude-2">Claude 2</option> <!-- Updated value for clarity -->
+                            <option value="deepseek-coder">DeepSeek Coder</option> <!-- Example actual model name -->
+                        </select>
+                    </div>
+                    <div class="writer-controls">
+                        <button id="generateBtn" aria-label="Generate content based on inputs">
+                            Generate Content
+                            <span id="generateSpinner" class="loading-spinner" style="display: none;" aria-hidden="true"></span>
+                        </button>
+                        <button id="proofreadBtn" class="proofread-btn" aria-label="Proofread and edit the generated content">
+                            Proofread & Edit
+                            <span id="proofreadSpinner" class="loading-spinner" style="display: none;" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                    <div class="output-area">
+                        <h4>Generated/Edited Content:</h4>
+                        <div id="generatedContentOutput" contenteditable="true" aria-label="Generated content area" role="textbox" aria-multiline="true"></div>
+                        <small id="contentStatus" style="display: block; margin-top: 0.5rem; color: var(--muted-text-color);" aria-live="polite"></small>
+                    </div>
+                </div>
+                 <p id="writerAccessMessage" style="text-align: center; margin-top: 2rem; font-size: 1.1rem; color: var(--danger-color); display: none;">
+                    Please <a href="#" id="loginFromWriterMessage">log in</a> or <a href="#pricing" id="upgradeFromWriterMessage">choose a plan</a> to access the AI Writing Assistant.
+                </p>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div class="container">
+            <p>© <span id="currentYear"></span> NovaWrite AI. All rights reserved. Built with passion for innovative content creation.</p>
+            <p><a href="#privacypolicy" style="color: var(--muted-text-color); text-decoration:none;">Privacy Policy</a> | <a href="#terms" style="color: var(--muted-text-color); text-decoration:none;">Terms of Service</a></p>
+        </div>
+    </footer>
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal" role="dialog" aria-labelledby="loginModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <button type="button" class="close-modal" data-modal-id="loginModal" aria-label="Close login dialog">×</button>
+            <h3 id="loginModalTitle">Login to NovaWrite AI</h3>
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" name="loginEmail" required aria-required="true">
+                    <span class="error-message" id="loginEmailError" aria-live="assertive"></span>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password:</label>
+                    <input type="password" id="loginPassword" name="loginPassword" required aria-required="true">
+                    <span class="error-message" id="loginPasswordError" aria-live="assertive"></span>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Login</button>
+                </div>
+            </form>
+            <p class="switch-auth-mode">Don't have an account? <a href="#" id="switchToSignup">Sign Up</a></p>
+        </div>
+    </div>
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal" role="dialog" aria-labelledby="signupModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <button type="button" class="close-modal" data-modal-id="signupModal" aria-label="Close signup dialog">×</button>
+            <h3 id="signupModalTitle">Sign Up for NovaWrite AI</h3>
+            <form id="signupForm" novalidate>
+                <div class="form-group">
+                    <label for="signupUsername">Username:</label>
+                    <input type="text" id="signupUsername" name="signupUsername" required aria-required="true" minlength="3">
+                    <span class="error-message" id="signupUsernameError" aria-live="assertive"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Email:</label>
+                    <input type="email" id="signupEmail" name="signupEmail" required aria-required="true">
+                    <span class="error-message" id="signupEmailError" aria-live="assertive"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password (min. 8 characters):</label>
+                    <input type="password" id="signupPassword" name="signupPassword" required aria-required="true" minlength="8">
+                    <span class="error-message" id="signupPasswordError" aria-live="assertive"></span>
+                </div>
+                <div class="form-group">
+                    <button type="submit">Sign Up</button>
+                </div>
+            </form>
+            <p class="switch-auth-mode">Already have an account? <a href="#" id="switchToLogin">Login</a></p>
+        </div>
+    </div>
+    <!-- Template Library Modal -->
+    <div id="templateLibraryModal" class="modal" role="dialog" aria-labelledby="templateLibraryModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <button type="button" class="close-modal" data-modal-id="templateLibraryModal" aria-label="Close template library dialog">×</button>
+            <h3 id="templateLibraryModalTitle">Template Library</h3>
+            <input type="text" id="templateSearch" placeholder="Search templates..." style="width:100%; padding:0.75rem; margin-bottom:1rem; border:1px solid var(--border-color); border-radius:var(--border-radius);" aria-label="Search templates">
+            <div id="templateLibraryList" class="template-library-list" role="listbox" aria-label="Available templates">
+                <!-- Templates will be populated by JS -->
+            </div>
+             <button type="button" id="selectTemplateBtn" style="margin-top:1rem; background-color: var(--primary-color); color:white; border:none; padding:0.75rem; border-radius:var(--border-radius); cursor:pointer; width:100%;">Select Template</button>
+        </div>
+    </div>
+    <div id="toastNotification" class="toast" role="alert" aria-live="assertive"></div>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Firebase Setup ---
+        // IMPORTANT: Replace with your actual Firebase config object
+          const firebaseConfig = {
+    apiKey: "AIzaSyBYRgev-RLg4CT7jKA8YlTocAAzw2uBzKM",
+    authDomain: "novawriteai.firebaseapp.com",
+    projectId: "novawriteai",
+    storageBucket: "novawriteai.firebasestorage.app",
+    messagingSenderId: "19194191418",
+    appId: "1:19194191418:web:7213c56c393823d7e65f03",
+    measurementId: "G-RVGF1G03K2"
+  };
+
+        let fbApp, fbAuth, fbDb, fbFunctions;
+
+        try {
+            fbApp = firebase.initializeApp(firebaseConfig);
+            fbAuth = firebase.auth();
+            fbDb = firebase.firestore();
+            fbFunctions = firebase.functions();
+
+            // Optional: For local testing of functions and other Firebase services
+            // Make sure emulators are running (`firebase emulators:start`)
+            // if (window.location.hostname === "localhost") {
+            //     console.log("Using Firebase Emulators");
+            //     fbAuth.useEmulator("http://localhost:9099");
+            //     fbDb.useEmulator("localhost", 8080);
+            //     fbFunctions.useEmulator("localhost", 5001);
+            // }
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            showToast("Critical Error: Could not connect to services. Please refresh.", "error", 10000);
+            // Disable app functionality if Firebase doesn't load
+            document.body.innerHTML = "<p style='color:red; text-align:center; padding-top: 20vh; font-size:1.5em;'>Application could not start due to a critical error connecting to backend services. Please try again later.</p>";
+            return; // Stop further script execution
+        }
+
+
+        // --- State Management ---
+        let currentUser = null; // Will hold user's Firebase Auth object and Firestore profile
+        let selectedTemplate = null;
+        let activeModalId = null;
+
+        // --- DOM Elements ---
+        const DOMElements = {
+            loginBtn: document.getElementById('loginBtn'), signupBtn: document.getElementById('signupBtn'),
+            logoutBtn: document.getElementById('logoutBtn'), userAccountNav: document.getElementById('userAccountNav'),
+            userCreditsNav: document.getElementById('userCreditsNav'), themeToggleBtn: document.getElementById('themeToggleBtn'),
+            navLinks: document.querySelectorAll('.nav-link'),
+            loginModal: document.getElementById('loginModal'), signupModal: document.getElementById('signupModal'),
+            templateLibraryModal: document.getElementById('templateLibraryModal'), closeModalBtns: document.querySelectorAll('.close-modal'),
+            loginForm: document.getElementById('loginForm'), signupForm: document.getElementById('signupForm'),
+            switchToSignup: document.getElementById('switchToSignup'), switchToLogin: document.getElementById('switchToLogin'),
+            loginEmailError: document.getElementById('loginEmailError'), loginPasswordError: document.getElementById('loginPasswordError'),
+            signupUsernameError: document.getElementById('signupUsernameError'), signupEmailError: document.getElementById('signupEmailError'),
+            signupPasswordError: document.getElementById('signupPasswordError'),
+            writerApp: document.getElementById('writerApp'), writerAccessMessage: document.getElementById('writerAccessMessage'),
+            loginFromWriterMessage: document.getElementById('loginFromWriterMessage'), contentTopic: document.getElementById('contentTopic'),
+            selectedTemplateDisplay: document.getElementById('selectedTemplateDisplay'), openTemplateLibraryBtn: document.getElementById('openTemplateLibraryBtn'),
+            languageSelect: document.getElementById('languageSelect'), aiModelSelectorGroup: document.getElementById('aiModelSelectorGroup'),
+            aiModelSelect: document.getElementById('aiModelSelect'), generateBtn: document.getElementById('generateBtn'),
+            proofreadBtn: document.getElementById('proofreadBtn'), generateSpinner: document.getElementById('generateSpinner'),
+            proofreadSpinner: document.getElementById('proofreadSpinner'), generatedContentOutput: document.getElementById('generatedContentOutput'),
+            userCreditsDisplay: document.getElementById('userCredits'), contentStatus: document.getElementById('contentStatus'),
+            templateLibraryList: document.getElementById('templateLibraryList'), templateSearch: document.getElementById('templateSearch'),
+            selectTemplateBtn: document.getElementById('selectTemplateBtn'),
+            pricingPlanButtons: document.querySelectorAll('.select-plan-button'),
+            toastNotification: document.getElementById('toastNotification'), currentYear: document.getElementById('currentYear'),
+        };
+        if (DOMElements.currentYear) DOMElements.currentYear.textContent = new Date().getFullYear();
+
+        // --- Utility Functions ---
+        const showToast = (message, type = 'info', duration = 3500) => { /* ... no change ... */
+            if (!DOMElements.toastNotification) return;
+            DOMElements.toastNotification.textContent = message;
+            DOMElements.toastNotification.className = 'toast show';
+            if (type === 'success') DOMElements.toastNotification.classList.add('success');
+            else if (type === 'error') DOMElements.toastNotification.classList.add('error');
+            else if (type === 'info') DOMElements.toastNotification.classList.add('info');
+
+            setTimeout(() => {
+                DOMElements.toastNotification.classList.remove('show');
+            }, duration);
+        };
+        const openModal = (modalId) => { /* ... no change ... */
+            const modal = document.getElementById(modalId);
+            if(modal) {
+                modal.classList.add('active');
+                activeModalId = modalId;
+                const firstFocusableElement = modal.querySelector('button, [href], input:not([type="hidden"]), select, textarea, [tabindex]:not([tabindex="-1"])');
+                if (firstFocusableElement) firstFocusableElement.focus();
+            }
+        };
+        const closeModal = (modalId) => { /* ... no change ... */
+            const modal = document.getElementById(modalId);
+            if(modal) {
+                modal.classList.remove('active');
+                if (activeModalId === modalId) activeModalId = null;
+            }
+        };
+        const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).toLowerCase());
+        const displayFieldError = (inputElement, errorMsgElement, message) => { /* ... no change ... */
+            if (inputElement) inputElement.classList.add('error');
+            if (errorMsgElement) errorMsgElement.textContent = message;
+        };
+        const clearFieldError = (inputElement, errorMsgElement) => { /* ... no change ... */
+            if (inputElement) inputElement.classList.remove('error');
+            if (errorMsgElement) errorMsgElement.textContent = '';
+        };
+        const setButtonLoadingState = (button, spinner, isLoading) => { /* ... no change ... */
+            if (!button || !spinner) return;
+            button.disabled = isLoading;
+            button.setAttribute('aria-busy', isLoading.toString());
+            spinner.style.display = isLoading ? 'inline-block' : 'none';
+        };
+
+
+        // --- Firebase Auth & User Profile Service ---
+        const authService = {
+            onAuthStateChanged: (callback) => {
+                return fbAuth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        try {
+                            const userProfileDoc = await fbDb.collection('users').doc(user.uid).get();
+                            if (userProfileDoc.exists) {
+                                currentUser = { uid: user.uid, email: user.email, ...userProfileDoc.data() };
+                                if (currentUser.credits === -1) currentUser.credits = Infinity; // Handle "Unlimited"
+                            } else {
+                                // This case might happen if user document creation failed during signup
+                                // or if user was deleted from Firestore but not Auth.
+                                console.warn("User authenticated but profile not found in Firestore. Logging out.");
+                                await fbAuth.signOut();
+                                currentUser = null;
+                            }
+                        } catch (error) {
+                            console.error("Error fetching user profile:", error);
+                            showToast("Error loading your profile. Please try again.", "error");
+                            currentUser = null; // Ensure inconsistent state is cleared
+                        }
+                    } else {
+                        currentUser = null;
+                    }
+                    callback(currentUser); // Pass the processed currentUser (or null)
+                    updateUIAfterAuth(); // Update UI based on the new auth state
+                });
+            },
+            signup: async (username, email, password) => {
+                if (username.length < 3) throw new Error("Username must be at least 3 characters.");
+                if (!validateEmail(email)) throw new Error("Invalid email format.");
+                if (password.length < 8) throw new Error("Password must be at least 8 characters.");
+
+                try {
+                    const userCredential = await fbAuth.createUserWithEmailAndPassword(email, password);
+                    const user = userCredential.user;
+
+                    // Create user profile in Firestore
+                    const initialPlan = planService.getPlanDetails("Basic"); // New users start with Basic
+                    const userProfile = {
+                        username: username,
+                        email: user.email,
+                        plan: initialPlan.name,
+                        credits: initialPlan.credits === Infinity ? -1 : initialPlan.credits,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    await fbDb.collection('users').doc(user.uid).set(userProfile);
+
+                    currentUser = { uid: user.uid, ...userProfile };
+                    if (currentUser.credits === -1) currentUser.credits = Infinity;
+                    return currentUser;
+                } catch (error) {
+                    console.error("Signup error:", error);
+                    throw new Error(error.message || "Signup failed. Please try again.");
+                }
+            },
+            login: async (email, password) => {
+                try {
+                    await fbAuth.signInWithEmailAndPassword(email, password);
+                    // onAuthStateChanged will handle fetching profile and setting currentUser
+                    // We just need to wait for it to resolve if we need currentUser immediately,
+                    // but for login, the UI update will happen via the listener.
+                    return true; // Indicates successful Firebase login attempt
+                } catch (error) {
+                    console.error("Login error:", error);
+                    throw new Error(error.message || "Invalid email or password.");
+                }
+            },
+            logout: async () => {
+                try {
+                    await fbAuth.signOut();
+                    currentUser = null; // Explicitly clear
+                } catch (error) {
+                    console.error("Logout error:", error);
+                    showToast("Error logging out. Please try again.", "error");
+                }
+            },
+            updateUserPlan: async (userId, planName) => { // New function to update plan in Firestore
+                const planDetails = planService.getPlanDetails(planName);
+                if (!planDetails) throw new Error("Invalid plan selected.");
+                try {
+                    await fbDb.collection('users').doc(userId).update({
+                        plan: planDetails.name,
+                        credits: planDetails.credits === Infinity ? -1 : planDetails.credits
+                    });
+                    // Update local currentUser to reflect changes immediately
+                    if (currentUser && currentUser.uid === userId) {
+                        currentUser.plan = planDetails.name;
+                        currentUser.credits = planDetails.credits;
+                         if (currentUser.credits === -1) currentUser.credits = Infinity;
+                    }
+                    return planDetails;
+                } catch (error) {
+                    console.error("Error updating plan in Firestore:", error);
+                    throw new Error("Failed to update plan: " + error.message);
+                }
+            }
+        };
+
+        // --- Client-Side Plan Details Service ---
+        // This primarily defines what each plan *offers* for UI display and client-side logic.
+        // The Cloud Function will have its own version for backend enforcement.
+        const planService = {
+            getPlanDetails: (planName) => {
+                const plans = {
+                    Basic: {
+                        name: "Basic",
+                        credits: 10000,
+                        templateAccessLevel: 1,
+                        languageAccessLevel: 1,
+                        proofreading: "Basic",
+                        // Actual model used will be determined by backend based on this tier
+                        aiModelDescription: "Standard AI Model", // For UI display
+                        actualModelForFunction: "gpt-3.5-turbo" // Example of default model for Basic in CF
+                    },
+                    Premium: {
+                        name: "Premium",
+                        credits: 50000,
+                        templateAccessLevel: 2,
+                        languageAccessLevel: 2,
+                        proofreading: "Advanced",
+                        aiModelDescription: "Advanced AI Models (GPT-4, Gemini access)",
+                        actualModelForFunction: "gemini-1.0-pro" // Example for Premium in CF
+                    },
+                    Ultimate: {
+                        name: "Ultimate",
+                        credits: Infinity, // Represented as -1 in Firestore
+                        templateAccessLevel: 3,
+                        languageAccessLevel: 3,
+                        proofreading: "Advanced Suite",
+                        aiModelDescription: "Full Suite of AI Models (Selector)",
+                        // SelectableModels are used by the dropdown, actual value sent to CF
+                        selectableModels: ["gpt-4", "gemini-pro", "claude-2", "deepseek-coder"]
+                    }
+                };
+                return plans[planName || "Basic"];
+            }
+            // selectPlan is now part of authService.updateUserPlan
+        };
+
+
+        // --- Mock Data for Templates & Languages (Can be moved to Firestore if needed) ---
+        const MOCK_TEMPLATES = [
+            { id: "t001", name: "Blog Post Outline", category: "Blogging", description: "Structure your next viral blog post.", requiredPlan: "Basic", creditCost: 10 },
+            { id: "t002", name: "SEO Meta Description", category: "SEO", description: "Craft compelling meta descriptions.", requiredPlan: "Basic", creditCost: 5 },
+            { id: "t003", name: "Social Media Ad Copy", category: "Social Media", description: "Generate engaging ad copy for Facebook, Instagram.", requiredPlan: "Basic", creditCost: 15 },
+            { id: "t004", name: "Product Description", category: "E-commerce", description: "Write persuasive product descriptions.", requiredPlan: "Premium", creditCost: 25 },
+            { id: "t005", name: "White Paper Introduction", category: "Technical", description: "Start your white paper with impact.", requiredPlan: "Premium", creditCost: 50 },
+            { id: "t006", name: "Job Description", category: "HR", description: "Create comprehensive job descriptions.", requiredPlan: "Premium", creditCost: 30 },
+            { id: "t007", name: "Technical Documentation Section", category: "Technical", description: "Draft a section for technical docs.", requiredPlan: "Ultimate", creditCost: 60 },
+            { id: "t008", name: "Educational Course Module", category: "Education", description: "Outline a module for an online course.", requiredPlan: "Ultimate", creditCost: 40 },
+        ];
+        const MOCK_LANGUAGES = [
+            { code: "en", name: "English", requiredPlan: "Basic" }, { code: "es", name: "Español", requiredPlan: "Basic" },
+            { code: "fr", name: "Français", requiredPlan: "Basic" }, { code: "de", name: "Deutsch", requiredPlan: "Basic" },
+            { code: "ja", name: "日本語", requiredPlan: "Basic" }, { code: "pt", name: "Português", requiredPlan: "Premium" },
+            { code: "it", name: "Italiano", requiredPlan: "Premium" }, { code: "zh-CN", name: "中文 (简体)", requiredPlan: "Premium" },
+            { code: "ru", name: "Русский", requiredPlan: "Premium" }, { code: "ar", name: "العربية", requiredPlan: "Ultimate" },
+            { code: "hi", name: "हिन्दी", requiredPlan: "Ultimate" }, { code: "ko", name: "한국어", requiredPlan: "Ultimate" },
+        ];
+
+        // --- Client-Side Services (Templates, Languages, Content Generation Proxies) ---
+        const templateService = {
+            getTemplates: (userPlanName) => {
+                if (!userPlanName) return MOCK_TEMPLATES; // Or empty if login required
+                const planDetails = planService.getPlanDetails(userPlanName);
+                const userAccessLevel = planDetails.templateAccessLevel;
+                return MOCK_TEMPLATES.filter(template => {
+                    const requiredLevel = planService.getPlanDetails(template.requiredPlan).templateAccessLevel;
+                    return userAccessLevel >= requiredLevel;
+                });
+            },
+            filterTemplates: (searchTerm, userPlanName) => {
+                const availableTemplates = templateService.getTemplates(userPlanName);
+                const lowerSearchTerm = searchTerm.toLowerCase();
+                return availableTemplates.filter(t =>
+                    t.name.toLowerCase().includes(lowerSearchTerm) ||
+                    t.category.toLowerCase().includes(lowerSearchTerm) ||
+                    t.description.toLowerCase().includes(lowerSearchTerm)
+                );
+            },
+            getTemplateById: (id) => {
+                return MOCK_TEMPLATES.find(t => t.id === id) || null;
+            }
+        };
+
+        const languageService = {
+            getLanguages: (userPlanName) => {
+                if (!userPlanName) return MOCK_LANGUAGES.filter(l=>l.requiredPlan === "Basic"); // Default for non-logged in
+                const planDetails = planService.getPlanDetails(userPlanName);
+                const userAccessLevel = planDetails.languageAccessLevel;
+                return MOCK_LANGUAGES.filter(lang => {
+                     const requiredLevel = planService.getPlanDetails(lang.requiredPlan).languageAccessLevel;
+                     return userAccessLevel >= requiredLevel;
+                });
+            }
+        };
+
+        const creditService = { // Client-side check for UI purposes, backend enforces
+            checkAccess: (requiredPlan) => {
+                 if (!currentUser) return false;
+                const userPlanLevel = planService.getPlanDetails(currentUser.plan).templateAccessLevel; // or languageAccessLevel
+                const requiredLevel = planService.getPlanDetails(requiredPlan).templateAccessLevel;
+                return userPlanLevel >= requiredLevel;
+            }
+            // Deduction is handled by the Cloud Function
+        };
+
+        const contentGenerationService = {
+            generate: async (topic, templateObj, language, aiModelPreference) => {
+                if (!fbAuth.currentUser) throw new Error("User not authenticated.");
+
+                const callGenerateFunction = fbFunctions.httpsCallable('generateContent');
+                try {
+                    // Pass only necessary template info to reduce payload
+                    const templatePayload = templateObj ? {
+                        name: templateObj.name,
+                        description: templateObj.description, // Or specific instructions from template
+                        creditCost: templateObj.creditCost
+                    } : null;
+
+                    console.log("Calling generateContent with:", { topic, template: templatePayload, language, aiModelPreference });
+
+                    const result = await callGenerateFunction({
+                        topic,
+                        template: templatePayload,
+                        language,
+                        aiModelPreference // This will be used if user's plan is Ultimate
+                    });
+                    // result.data will contain { text, creditsUsed, modelUsed }
+                    return result.data;
+                } catch (error) {
+                    console.error("Error calling generateContent function:", error);
+                    throw new Error(error.message || "Failed to generate content via cloud function.");
+                }
+            },
+            proofread: async (text) => {
+                 if (!fbAuth.currentUser) throw new Error("User not authenticated.");
+                 const planDetailsClient = planService.getPlanDetails(currentUser.plan);
+                 if (planDetailsClient.proofreading === "Basic") {
+                     if (!confirm("Basic proofreading offers limited suggestions. Premium and Ultimate plans provide advanced grammatical analysis, style recommendations, and plagiarism checks. Proceed with Basic?")) {
+                         throw new Error("Proofreading cancelled.");
+                     }
+                 }
+
+                const callProofreadFunction = fbFunctions.httpsCallable('proofreadContent');
+                try {
+                    const result = await callProofreadFunction({ textToProofread: text });
+                    return result.data; // e.g., { improvedText, suggestions, creditsUsed }
+                } catch (error) {
+                    console.error("Error calling proofreadContent function:", error);
+                    throw new Error(error.message || "Failed to proofread content.");
+                }
+            }
+        };
+
+
+        // --- UI Update Functions ---
+        const updateUIAfterAuth = () => {
+            const isLoggedIn = !!currentUser;
+            if (DOMElements.loginBtn) DOMElements.loginBtn.style.display = isLoggedIn ? 'none' : 'inline-block';
+            if (DOMElements.signupBtn) DOMElements.signupBtn.style.display = isLoggedIn ? 'none' : 'inline-block';
+            if (DOMElements.userAccountNav) DOMElements.userAccountNav.style.display = isLoggedIn ? 'flex' : 'none';
+            if (DOMElements.writerApp) DOMElements.writerApp.style.display = isLoggedIn ? 'block' : 'none';
+            if (DOMElements.writerAccessMessage) DOMElements.writerAccessMessage.style.display = isLoggedIn ? 'none' : 'block';
+
+            if (isLoggedIn && currentUser) {
+                const displayCredits = currentUser.credits === Infinity ? "Unlimited" : currentUser.credits.toLocaleString();
+                if (DOMElements.userCreditsNav) DOMElements.userCreditsNav.innerHTML = `Plan: <strong>${currentUser.plan}</strong> | Credits: <strong style="color:var(--secondary-color);">${displayCredits}</strong>`;
+                if (DOMElements.userCreditsDisplay) DOMElements.userCreditsDisplay.textContent = displayCredits;
+
+                const currentPlanDetails = planService.getPlanDetails(currentUser.plan);
+                if (DOMElements.aiModelSelectorGroup) {
+                    DOMElements.aiModelSelectorGroup.style.display = currentUser.plan === "Ultimate" ? 'block' : 'none';
+                    if (currentUser.plan === "Ultimate" && currentPlanDetails.selectableModels) {
+                        DOMElements.aiModelSelect.innerHTML = ''; // Clear previous options
+                        currentPlanDetails.selectableModels.forEach(modelValue => {
+                            const option = document.createElement('option');
+                            option.value = modelValue;
+                            // Make names more user-friendly if modelValue is like 'gemini-pro'
+                            let modelName = modelValue.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+                            if (modelValue === "gpt-4") modelName = "GPT-4";
+                            if (modelValue === "deepseek-coder") modelName = "DeepSeek Coder";
+                            option.textContent = modelName;
+                            DOMElements.aiModelSelect.appendChild(option);
+                        });
+                    }
+                }
+                populateLanguages(currentUser.plan);
+            } else {
+                if (DOMElements.userCreditsDisplay) DOMElements.userCreditsDisplay.textContent = "N/A";
+                populateLanguages(null); // Populate with default for non-logged-in
+                if (DOMElements.selectedTemplateDisplay) DOMElements.selectedTemplateDisplay.value = '';
+                if (DOMElements.aiModelSelectorGroup) DOMElements.aiModelSelectorGroup.style.display = 'none';
+                selectedTemplate = null;
+            }
+        };
+
+        const populateLanguages = (userPlanName) => { /* ... (same as before, uses languageService) ... */
+            if (!DOMElements.languageSelect) return;
+            const languages = languageService.getLanguages(userPlanName);
+            DOMElements.languageSelect.innerHTML = '';
+            if (languages.length === 0 && !userPlanName) { // Not logged in, default to English
+                 const option = document.createElement('option');
+                 option.value = "en"; option.textContent = "English (Default)";
+                 DOMElements.languageSelect.appendChild(option);
+                 const optionLogin = document.createElement('option');
+                 optionLogin.value = ""; optionLogin.textContent = "Login for more languages";
+                 optionLogin.disabled = true;
+                 DOMElements.languageSelect.appendChild(optionLogin);
+                 return;
+            }
+             if (languages.length === 0 && userPlanName) { // Logged in but no languages for plan (unlikely with mock data)
+                 const option = document.createElement('option');
+                 option.value = "en"; option.textContent = "English (Default)"; // Fallback
+                 DOMElements.languageSelect.appendChild(option);
+                 return;
+            }
+            languages.forEach(lang => {
+                const option = document.createElement('option');
+                option.value = lang.code;
+                option.textContent = lang.name;
+                DOMElements.languageSelect.appendChild(option);
+            });
+         };
+        const renderTemplates = (templatesToRender) => { /* ... (same as before, uses MOCK_TEMPLATES template.id) ... */
+            if (!DOMElements.templateLibraryList) return;
+            DOMElements.templateLibraryList.innerHTML = '';
+            if (templatesToRender.length === 0) {
+                DOMElements.templateLibraryList.innerHTML = '<p style="padding:1rem; text-align:center; color:var(--muted-text-color);">No templates match your search or current plan.</p>';
+                return;
+            }
+            templatesToRender.forEach(template => {
+                const item = document.createElement('div');
+                item.classList.add('template-item');
+                item.dataset.templateId = template.id;
+                item.setAttribute('role', 'option');
+                item.setAttribute('tabindex', '0');
+                item.innerHTML = `<strong>${template.name}</strong> (${template.creditCost} credits)<br><small>${template.category} - Plan: ${template.requiredPlan}</small>`;
+
+                const selectCurrentTemplate = () => {
+                    document.querySelectorAll('.template-item.selected').forEach(el => {
+                        el.classList.remove('selected');
+                        el.removeAttribute('aria-selected');
+                    });
+                    item.classList.add('selected');
+                    item.setAttribute('aria-selected', 'true');
+                };
+                item.addEventListener('click', selectCurrentTemplate);
+                item.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectCurrentTemplate(); }});
+                DOMElements.templateLibraryList.appendChild(item);
+            });
+        };
+        const applyTheme = (theme) => { /* ... no change ... */
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                if (DOMElements.themeToggleBtn) {
+                    DOMElements.themeToggleBtn.textContent = '☀️';
+                    DOMElements.themeToggleBtn.setAttribute('aria-label', 'Switch to light theme');
+                }
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                if (DOMElements.themeToggleBtn) {
+                    DOMElements.themeToggleBtn.textContent = '🌙';
+                    DOMElements.themeToggleBtn.setAttribute('aria-label', 'Switch to dark theme');
+                }
+            }
+        };
+
+        // --- Event Listeners Setup ---
+        if (DOMElements.themeToggleBtn) { /* ... no change ... */
+            const storedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            applyTheme(storedTheme);
+            DOMElements.themeToggleBtn.addEventListener('click', () => {
+                let currentAttributeTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentAttributeTheme === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('theme', newTheme);
+                applyTheme(newTheme);
+            });
+        }
+        if (DOMElements.navLinks) { /* ... no change ... */
+             DOMElements.navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                    } else if (targetId === '#') {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                });
+            });
+        }
+        if (typeof IntersectionObserver === 'function') { /* ... no change ... */
+            const observerCallback = (entries) => {
+                entries.forEach(entry => {
+                    const id = entry.target.getAttribute('id');
+                    const navLink = document.querySelector(`.nav-link[href="#${id}"]`);
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+                        document.querySelectorAll('.nav-link.active').forEach(l => l.classList.remove('active'));
+                        if (navLink) navLink.classList.add('active');
+                    }
+                });
+            };
+            const observerOptions = { root: null, rootMargin: '0px 0px -40% 0px', threshold: 0.5 };
+            const observer = new IntersectionObserver(observerCallback, observerOptions);
+            document.querySelectorAll('main section[id]').forEach(section => {
+                if (section) observer.observe(section);
+            });
+        }
+
+        if (DOMElements.loginBtn) DOMElements.loginBtn.addEventListener('click', () => openModal('loginModal'));
+        if (DOMElements.signupBtn) DOMElements.signupBtn.addEventListener('click', () => openModal('signupModal'));
+        if (DOMElements.loginFromWriterMessage) DOMElements.loginFromWriterMessage.addEventListener('click', (e) => { e.preventDefault(); openModal('loginModal'); });
+        if (DOMElements.closeModalBtns) { /* ... no change ... */
+            DOMElements.closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', () => closeModal(btn.dataset.modalId));
+            });
+        }
+        window.addEventListener('keydown', (event) => { /* ... no change ... */
+            if (event.key === 'Escape' && activeModalId) {
+                closeModal(activeModalId);
+            }
+        });
+        if (DOMElements.switchToSignup) DOMElements.switchToSignup.addEventListener('click', (e) => { e.preventDefault(); closeModal('loginModal'); openModal('signupModal'); });
+        if (DOMElements.switchToLogin) DOMElements.switchToLogin.addEventListener('click', (e) => { e.preventDefault(); closeModal('signupModal'); openModal('loginModal'); });
+
+        // Auth Form Handlers
+        if (DOMElements.loginForm) {
+            DOMElements.loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                let isValid = true;
+                const emailInput = DOMElements.loginForm.loginEmail;
+                const passwordInput = DOMElements.loginForm.loginPassword;
+                clearFieldError(emailInput, DOMElements.loginEmailError);
+                if (!validateEmail(emailInput.value)) {
+                    displayFieldError(emailInput, DOMElements.loginEmailError, "Please enter a valid email."); isValid = false;
+                }
+                clearFieldError(passwordInput, DOMElements.loginPasswordError);
+                if (!passwordInput.value) {
+                    displayFieldError(passwordInput, DOMElements.loginPasswordError, "Password is required."); isValid = false;
+                }
+                if (!isValid) return;
+
+                try {
+                    await authService.login(emailInput.value, passwordInput.value);
+                    // onAuthStateChanged will update UI and currentUser
+                    closeModal('loginModal');
+                    showToast("Login successful! Welcome back.", "success");
+                    DOMElements.loginForm.reset();
+                } catch (error) {
+                    showToast(error.message, "error");
+                    displayFieldError(passwordInput, DOMElements.loginPasswordError, "Invalid email or password.");
+                }
+            });
+        }
+        if (DOMElements.signupForm) {
+            DOMElements.signupForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                let isValid = true;
+                const usernameInput = DOMElements.signupForm.signupUsername;
+                const emailInput = DOMElements.signupForm.signupEmail;
+                const passwordInput = DOMElements.signupForm.signupPassword;
+
+                clearFieldError(usernameInput, DOMElements.signupUsernameError);
+                if (usernameInput.value.length < 3) {
+                    displayFieldError(usernameInput, DOMElements.signupUsernameError, "Username must be at least 3 characters."); isValid = false;
+                }
+                clearFieldError(emailInput, DOMElements.signupEmailError);
+                if (!validateEmail(emailInput.value)) {
+                    displayFieldError(emailInput, DOMElements.signupEmailError, "Please enter a valid email address."); isValid = false;
+                }
+                clearFieldError(passwordInput, DOMElements.signupPasswordError);
+                if (passwordInput.value.length < 8) {
+                    displayFieldError(passwordInput, DOMElements.signupPasswordError, "Password must be at least 8 characters long."); isValid = false;
+                }
+                if (!isValid) return;
+
+                try {
+                    await authService.signup(usernameInput.value, emailInput.value, passwordInput.value);
+                    // onAuthStateChanged will update UI and currentUser
+                    closeModal('signupModal');
+                    showToast("Signup successful! Welcome to NovaWrite AI.", "success");
+                    DOMElements.signupForm.reset();
+                } catch (error) {
+                    showToast(error.message, "error");
+                    if (error.message.toLowerCase().includes("email-already-in-use")) {
+                        displayFieldError(emailInput, DOMElements.signupEmailError, "This email is already registered.");
+                    } else if (error.message.toLowerCase().includes("username")) { // Custom backend error if username unique
+                         displayFieldError(usernameInput, DOMElements.signupUsernameError, error.message);
+                    }
+                }
+            });
+        }
+        if (DOMElements.logoutBtn) {
+            DOMElements.logoutBtn.addEventListener('click', async () => {
+                await authService.logout();
+                // onAuthStateChanged will update UI and currentUser
+                showToast("Logged out successfully.", "info");
+                selectedTemplate = null;
+                if (DOMElements.selectedTemplateDisplay) DOMElements.selectedTemplateDisplay.value = '';
+                if (DOMElements.generatedContentOutput) DOMElements.generatedContentOutput.innerHTML = '';
+                if (DOMElements.contentTopic) DOMElements.contentTopic.value = '';
+                if (DOMElements.contentStatus) DOMElements.contentStatus.textContent = '';
+            });
+        }
+
+        // Pricing Plan Selection
+        if (DOMElements.pricingPlanButtons) {
+            DOMElements.pricingPlanButtons.forEach(button => {
+                button.addEventListener('click', async () => {
+                    if (!currentUser) {
+                        showToast("Please log in or sign up to choose a plan.", "info");
+                        openModal('loginModal'); return;
+                    }
+                    const planName = button.dataset.planName;
+                    if (currentUser.plan === planName) {
+                        showToast(`You are already on the ${planName} plan.`, "info"); return;
+                    }
+                    if (confirm(`Are you sure you want to switch to the ${planName} plan?`)) {
+                        try {
+                            await authService.updateUserPlan(currentUser.uid, planName);
+                            updateUIAfterAuth(); // Refresh UI with new plan details
+                            showToast(`Successfully switched to the ${planName} plan!`, "success");
+                        } catch (error) {
+                            showToast("Failed to change plan. " + error.message, "error");
+                        }
+                    }
+                });
+            });
+        }
+
+        // Template Library
+        if (DOMElements.openTemplateLibraryBtn) { /* ... (same as before, uses client-side templateService) ... */
+            DOMElements.openTemplateLibraryBtn.addEventListener('click', () => {
+                if (!currentUser) { showToast("Please log in to access templates.", "info"); return; }
+                const userTemplates = templateService.getTemplates(currentUser.plan);
+                renderTemplates(userTemplates);
+                openModal('templateLibraryModal');
+                if(DOMElements.templateSearch) DOMElements.templateSearch.value = '';
+            });
+        }
+        if (DOMElements.templateSearch) { /* ... (same as before) ... */
+            DOMElements.templateSearch.addEventListener('input', (e) => {
+                if (!currentUser) return;
+                const searchTerm = e.target.value;
+                const filteredTemplates = templateService.filterTemplates(searchTerm, currentUser.plan);
+                renderTemplates(filteredTemplates);
+            });
+        }
+        if (DOMElements.selectTemplateBtn) { /* ... (same as before, uses client-side templateService & creditService.checkAccess) ... */
+            DOMElements.selectTemplateBtn.addEventListener('click', () => {
+                const selectedEl = DOMElements.templateLibraryList.querySelector('.template-item.selected');
+                if (selectedEl) {
+                    const templateId = selectedEl.dataset.templateId; // String ID from MOCK_TEMPLATES
+                    const foundTemplate = templateService.getTemplateById(templateId);
+                    if (foundTemplate) {
+                        if (!creditService.checkAccess(foundTemplate.requiredPlan)) { // Client-side check for UI
+                            showToast(`This template requires the ${foundTemplate.requiredPlan} plan. Please upgrade.`, "error");
+                            return;
+                        }
+                        selectedTemplate = foundTemplate;
+                        DOMElements.selectedTemplateDisplay.value = `${selectedTemplate.name} (${selectedTemplate.creditCost} credits)`;
+                        showToast(`Template "${selectedTemplate.name}" selected.`, "info");
+                        closeModal('templateLibraryModal');
+                    } else {
+                        showToast("Error: Could not find selected template details.", "error");
+                    }
+                } else {
+                    showToast("Please select a template from the list first.", "info");
+                }
+            });
+        }
+
+
+        // Content Generation & Proofreading (Calls Cloud Functions)
+        if (DOMElements.generateBtn) {
+            DOMElements.generateBtn.addEventListener('click', async () => {
+                if (!currentUser) { showToast("Please log in to generate content.", "info"); return; }
+                const topic = DOMElements.contentTopic.value.trim();
+                if (!topic) { showToast("Please enter a topic or prompt.", "error"); DOMElements.contentTopic.focus(); return; }
+                if (!selectedTemplate && !confirm("No template selected. Proceed with general content generation? This might use default settings and credit costs.")) {
+                    showToast("Template selection recommended for tailored content.", "info");
+                    DOMElements.openTemplateLibraryBtn.focus(); return;
+                }
+
+                setButtonLoadingState(DOMElements.generateBtn, DOMElements.generateSpinner, true);
+                DOMElements.contentStatus.textContent = "Generating content... This may take a moment.";
+                try {
+                    const language = DOMElements.languageSelect.value;
+                    const aiModelPreference = currentUser.plan === "Ultimate" ? DOMElements.aiModelSelect.value : null;
+
+                    // Call the updated service which now calls the Cloud Function
+                    const result = await contentGenerationService.generate(topic, selectedTemplate, language, aiModelPreference);
+
+                    DOMElements.generatedContentOutput.innerHTML = result.text.replace(/\n/g, '<br>');
+                    DOMElements.contentStatus.textContent = `Content generated with ${result.modelUsed || 'default model'}! Credits used: ${result.creditsUsed}.`;
+                    // Fetch updated user profile to reflect credit changes
+                    const userProfileDoc = await fbDb.collection('users').doc(currentUser.uid).get();
+                    if (userProfileDoc.exists) {
+                        currentUser = { uid: currentUser.uid, email: currentUser.email, ...userProfileDoc.data() };
+                         if (currentUser.credits === -1) currentUser.credits = Infinity;
+                        updateUIAfterAuth();
+                    }
+                    showToast("Content generation successful!", "success");
+                } catch (error) {
+                    DOMElements.generatedContentOutput.innerHTML = `<p style="color:var(--danger-color)">Error: ${error.message}</p>`;
+                    DOMElements.contentStatus.textContent = `Error generating content: ${error.message}`;
+                    showToast(error.message, "error", 5000);
+                } finally {
+                    setButtonLoadingState(DOMElements.generateBtn, DOMElements.generateSpinner, false);
+                }
+            });
+        }
+        if (DOMElements.proofreadBtn) {
+            DOMElements.proofreadBtn.addEventListener('click', async () => {
+                if (!currentUser) { showToast("Please log in to use proofreading.", "info"); return; }
+                const contentToProofread = DOMElements.generatedContentOutput.innerText;
+                if (!contentToProofread.trim()) { showToast("No content available to proofread.", "error"); return; }
+
+                setButtonLoadingState(DOMElements.proofreadBtn, DOMElements.proofreadSpinner, true);
+                DOMElements.contentStatus.textContent = "Proofreading content... Analyzing text.";
+                try {
+                    const result = await contentGenerationService.proofread(contentToProofread);
+                    DOMElements.generatedContentOutput.innerHTML = result.improvedText.replace(/\n/g, '<br>') +
+                        `<hr style="margin: 1rem 0; border-color: var(--border-color);"><pre style="font-size:0.9em; color:var(--muted-text-color); white-space:pre-wrap; background-color: rgba(var(--primary-color-rgb), 0.05); padding: 0.5rem; border-radius: var(--border-radius);">${result.suggestions}</pre>`;
+                    DOMElements.contentStatus.textContent = `Proofreading complete! Credits used: ${result.creditsUsed}.`;
+
+                    const userProfileDoc = await fbDb.collection('users').doc(currentUser.uid).get();
+                    if (userProfileDoc.exists) {
+                        currentUser = { uid: currentUser.uid, email: currentUser.email, ...userProfileDoc.data() };
+                        if (currentUser.credits === -1) currentUser.credits = Infinity;
+                        updateUIAfterAuth();
+                    }
+                    showToast("Proofreading analysis complete!", "success");
+                } catch (error) {
+                    DOMElements.contentStatus.textContent = `Error proofreading: ${error.message}`;
+                    showToast(error.message, "error", 5000);
+                } finally {
+                    setButtonLoadingState(DOMElements.proofreadBtn, DOMElements.proofreadSpinner, false);
+                }
+            });
+        }
+
+        // --- Initialization ---
+        // Listen for Firebase Auth state changes
+        authService.onAuthStateChanged((user) => {
+            // The callback already calls updateUIAfterAuth
+            // and populates/clears currentUser
+            if (!user) { // If logged out or not initially logged in
+                populateLanguages(null); // Default languages for non-logged-in
+            }
+            // Initial nav link active state
+             const initialNavLink = document.querySelector('.nav-link[href="#hero"]');
+            if(initialNavLink) initialNavLink.classList.add('active');
+        });
+
+        // Remove sql.js related initialization if it's fully replaced
+        // if (await initializeDatabase()) { await seedDatabase(); }
+        // The old initApp structure is now mostly handled by onAuthStateChanged
+
+    });
+    </script>
+
+</body>
+</html>

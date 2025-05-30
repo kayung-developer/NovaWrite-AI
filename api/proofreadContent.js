@@ -1,13 +1,21 @@
 // api/proofreadContent.js
-import admin, { db, auth } from './_firebaseAdmin'; // <<< CORRECTED IMPORT for default 'admin'
+import admin, { db, auth, isFirebaseAdminInitialized } from './_firebaseAdmin'; // Ensure isFirebaseAdminInitialized is imported
+
 // import AI SDKs for proofreading if needed (e.g., OpenAI)
 
 export default async function handler(req, res) {
+    // Add this check
+    if (!isFirebaseAdminInitialized || !db || !auth) {
+        console.error("CRITICAL: Firebase Admin SDK not initialized in proofreadContent. Check _firebaseAdmin.js logs and environment variables.");
+        return res.status(500).json({ error: "Internal Server Configuration Error: Backend services unavailable." });
+    }
+
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
     console.log("proofreadContent function invoked. Body:", req.body);
 
+    // ... rest of your proofreadContent logic
     const { textToProofread } = req.body;
     const idToken = req.headers.authorization?.split('Bearer ')[1];
 
@@ -38,14 +46,12 @@ export default async function handler(req, res) {
         }
 
         // --- Replace with actual AI Proofreading Call ---
-        // Example: You might use OpenAI's edit endpoint (older) or chat completions with a proofreading prompt
         const improvedText = textToProofread.replace(/eror/gi, "error").replace(/teh/gi, "the"); // Simple placeholder
         const suggestions = "(Vercel) Checked for common typos.";
         // --- End AI Proofreading Call ---
 
 
         if (userCredits !== -1) {
-            // Use the default admin export for FieldValue
             await userDocRef.update({ credits: admin.firestore.FieldValue.increment(-creditCost) });
         }
         console.log(`proofreadContent successful for user: ${userId}. Credits used: ${creditCost}`);

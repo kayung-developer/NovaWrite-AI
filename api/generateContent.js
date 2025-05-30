@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
     // --- Replace with actual AI API Call ---
     // Example with OpenAI (ensure 'openai' package is in package.json and OPENAI_API_KEY is set)
-    /*
+
     let generatedText;
     try {
         const completion = await openai.chat.completions.create({
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
         console.error("AI API Error:", aiError);
         return res.status(500).json({ error: "Failed to generate content from AI." });
     }
-    */
+
     let generatedText = `(Vercel) Generated for: ${topic} using ${modelUsedForDisplay} in ${language}. Template: ${template?.name}`;
     // --- End AI API Call ---
 

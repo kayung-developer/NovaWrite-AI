@@ -905,13 +905,13 @@
         // --- Firebase Setup ---
         // IMPORTANT: Replace with your actual Firebase config object
           const firebaseConfig = {
-    apiKey: "Your apiKey",
-    authDomain: "Your Firebase Auth Domain",
-    projectId: "Your Firebase Project Id",
-    storageBucket: "Your Storage Bucket",
-    messagingSenderId: "Your Messaging Sender ID",
-    appId: "App Id",
-    measurementId: "Measurement ID"
+    apiKey: "AIzaSyBYRgev-RLg4CT7jKA8YlTocAAzw2uBzKM",
+    authDomain: "novawriteai.firebaseapp.com",
+    projectId: "novawriteai",
+    storageBucket: "novawriteai.firebasestorage.app",
+    messagingSenderId: "19194191418",
+    appId: "1:19194191418:web:7213c56c393823d7e65f03",
+    measurementId: "G-RVGF1G03K2"
   };
 
         let fbApp, fbAuth, fbDb, fbFunctions;
@@ -1227,54 +1227,57 @@
             // Deduction is handled by the Cloud Function
         };
 
-        const contentGenerationService = {
-            generate: async (topic, templateObj, language, aiModelPreference) => {
-                if (!fbAuth.currentUser) throw new Error("User not authenticated.");
+const contentGenerationService = {
+    generate: async (topic, templateObj, language, aiModelPreference) => {
+        if (!fbAuth.currentUser) throw new Error("User not authenticated.");
 
-                const callGenerateFunction = fbFunctions.httpsCallable('generateContent');
-                try {
-                    // Pass only necessary template info to reduce payload
-                    const templatePayload = templateObj ? {
-                        name: templateObj.name,
-                        description: templateObj.description, // Or specific instructions from template
-                        creditCost: templateObj.creditCost
-                    } : null;
+        const idToken = await fbAuth.currentUser.getIdToken(true); // Get fresh ID token
 
-                    console.log("Calling generateContent with:", { topic, template: templatePayload, language, aiModelPreference });
-
-                    const result = await callGenerateFunction({
-                        topic,
-                        template: templatePayload,
-                        language,
-                        aiModelPreference // This will be used if user's plan is Ultimate
-                    });
-                    // result.data will contain { text, creditsUsed, modelUsed }
-                    return result.data;
-                } catch (error) {
-                    console.error("Error calling generateContent function:", error);
-                    throw new Error(error.message || "Failed to generate content via cloud function.");
-                }
+        const response = await fetch('/api/generateContent', { // Vercel function path
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
             },
-            proofread: async (text) => {
-                 if (!fbAuth.currentUser) throw new Error("User not authenticated.");
-                 const planDetailsClient = planService.getPlanDetails(currentUser.plan);
-                 if (planDetailsClient.proofreading === "Basic") {
-                     if (!confirm("Basic proofreading offers limited suggestions. Premium and Ultimate plans provide advanced grammatical analysis, style recommendations, and plagiarism checks. Proceed with Basic?")) {
-                         throw new Error("Proofreading cancelled.");
-                     }
-                 }
+            body: JSON.stringify({
+                topic,
+                template: templateObj ? { name: templateObj.name, description: templateObj.description, creditCost: templateObj.creditCost } : null,
+                language,
+                aiModelPreference
+            })
+        });
 
-                const callProofreadFunction = fbFunctions.httpsCallable('proofreadContent');
-                try {
-                    const result = await callProofreadFunction({ textToProofread: text });
-                    return result.data; // e.g., { improvedText, suggestions, creditsUsed }
-                } catch (error) {
-                    console.error("Error calling proofreadContent function:", error);
-                    throw new Error(error.message || "Failed to proofread content.");
-                }
-            }
-        };
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || `Server responded with ${response.status}`);
+        }
+        return result; // e.g., { text, creditsUsed, modelUsed }
+    },
 
+    proofread: async (text) => {
+        if (!fbAuth.currentUser) throw new Error("User not authenticated.");
+
+        const planDetailsClient = planService.getPlanDetails(currentUser.plan);
+        // ... (keep your existing client-side proofreading plan check if desired) ...
+
+        const idToken = await fbAuth.currentUser.getIdToken(true);
+
+        const response = await fetch('/api/proofreadContent', { // Vercel function path
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ textToProofread: text })
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+            throw new Error(result.error || `Server responded with ${response.status}`);
+        }
+        return result; // e.g., { improvedText, suggestions, creditsUsed }
+    }
+};
 
         // --- UI Update Functions ---
         const updateUIAfterAuth = () => {

@@ -74,6 +74,7 @@ export default async function handler(req, res) {
     // Basic plan uses the default gpt-3.5-turbo
 
     console.log(`User Plan: ${userPlan}, Selected AI Pref: ${aiModelPreference}, Using model: ${modelToUse}`);
+    console.log(`Attempting to use OpenAI model: ${modelToUse}`); // Log this!
 
     let generatedText;
     // --- Actual AI API Call ---

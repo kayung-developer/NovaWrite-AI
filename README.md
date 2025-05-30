@@ -203,7 +203,3 @@ Distributed under the MIT License. See `LICENSE` for more information (if you ad
 *   Firebase Team
 *   Providers of the AI models (OpenAI, Google, Anthropic, etc.)
 *   (Any other libraries or resources used)
-
----
-
-**Note:** This README assumes you will be implementing the backend Cloud Functions. The provided HTML/JS is primarily the frontend and client-side logic that *calls* these backend functions. The core AI generation happens in the cloud.

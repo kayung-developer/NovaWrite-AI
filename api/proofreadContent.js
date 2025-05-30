@@ -1,11 +1,12 @@
 // api/proofreadContent.js
-import { db, auth } from './_firebaseAdmin';
-// import AI SDKs for proofreading if needed
+import admin, { db, auth } from './_firebaseAdmin'; // <<< CORRECTED IMPORT for default 'admin'
+// import AI SDKs for proofreading if needed (e.g., OpenAI)
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
     }
+    console.log("proofreadContent function invoked. Body:", req.body);
 
     const { textToProofread } = req.body;
     const idToken = req.headers.authorization?.split('Bearer ')[1];
@@ -18,7 +19,8 @@ export default async function handler(req, res) {
     try {
         decodedToken = await auth.verifyIdToken(idToken);
     } catch (error) {
-        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+        console.error('Error verifying ID token in proofread:', error);
+        return res.status(401).json({ error: 'Unauthorized: Invalid token', details: error.message });
     }
     const userId = decodedToken.uid;
 
@@ -36,15 +38,17 @@ export default async function handler(req, res) {
         }
 
         // --- Replace with actual AI Proofreading Call ---
-        const improvedText = textToProofread.replace(/eror/gi, "error").replace(/teh/gi, "the");
+        // Example: You might use OpenAI's edit endpoint (older) or chat completions with a proofreading prompt
+        const improvedText = textToProofread.replace(/eror/gi, "error").replace(/teh/gi, "the"); // Simple placeholder
         const suggestions = "(Vercel) Checked for common typos.";
         // --- End AI Proofreading Call ---
 
 
         if (userCredits !== -1) {
+            // Use the default admin export for FieldValue
             await userDocRef.update({ credits: admin.firestore.FieldValue.increment(-creditCost) });
         }
-
+        console.log(`proofreadContent successful for user: ${userId}. Credits used: ${creditCost}`);
         res.status(200).json({
             improvedText,
             suggestions,
@@ -52,7 +56,7 @@ export default async function handler(req, res) {
         });
 
     } catch (error) {
-        console.error('Error in proofreadContent:', error);
+        console.error('Error in proofreadContent function (after auth):', error.stack);
         res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 }

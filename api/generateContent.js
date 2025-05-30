@@ -82,6 +82,7 @@ export default async function handler(req, res) {
         console.log(`User Plan: ${userPlan}, Selected AI Pref: ${aiModelPreference}, Attempting to use model: ${modelToUse}`);
 
         let generatedText;
+// ... inside api/generateContent.js
         if (modelToUse.startsWith("gpt")) {
             try {
                 const completion = await openai.chat.completions.create({
@@ -89,25 +90,26 @@ export default async function handler(req, res) {
                     messages: [{ role: "user", content: `Generate content about: ${topic}, based on template (if any): ${template?.name || 'General prompt'}, in language: ${language}` }],
                 });
                 generatedText = completion.choices[0].message.content;
-                if (!generatedText || generatedText.trim() === "") {
-                     console.warn(`OpenAI returned empty or whitespace content for topic: "${topic}" with model ${modelToUse}.`);
-                     generatedText = generatedText || ""; // Ensure it's at least an empty string
-                }
+                // ...
             } catch (aiError) {
+                // THIS IS WHERE THE ERROR IS LIKELY BEING CAUGHT AND LOGGED
                 console.error("OpenAI API Call Error:", aiError); // Log the whole error object
                 let detailMessage = "Failed to generate content due to an AI service error.";
                 let statusCode = 500;
 
                 if (aiError instanceof OpenAI.APIError) {
                     statusCode = aiError.status || 500;
-                    detailMessage = aiError.message; // OpenAI SDK v4+ errors are usually descriptive
+                    detailMessage = aiError.message;
                     console.error(`OpenAI API Error Details: Status ${aiError.status}, Type: ${aiError.type}, Code: ${aiError.code}, Message: ${aiError.message}`);
                 } else {
                     detailMessage = aiError.message || "An unexpected error occurred while contacting the AI service.";
                 }
+                // THIS IS WHAT SENDS THE ERROR MESSAGE TO YOUR FRONTEND
                 return res.status(statusCode).json({ error: "Failed to generate content from AI model.", details: detailMessage });
             }
-        } else if (modelToUse.startsWith("gemini")) {
+        }
+// ...
+        else if (modelToUse.startsWith("gemini")) {
             console.warn("Gemini model selected but SDK integration is a placeholder for Vercel function.");
             generatedText = `(Placeholder for Vercel Gemini ${modelToUse}) Generated for: ${topic}`;
             // If you want to explicitly block this path until implemented:

@@ -1,4 +1,11 @@
 // api/generateContent.js
+import admin, { db, auth, isFirebaseAdminInitialized } from './_firebaseAdmin';
+
+export default async function handler(req, res) {
+    if (!isFirebaseAdminInitialized || !db || !auth) {
+        console.error("CRITICAL: Firebase Admin SDK not initialized. Check _firebaseAdmin.js logs and environment variables.");
+        return res.status(500).json({ error: "Internal Server Configuration Error: Backend services unavailable." });
+    }
 import admin, { db, auth } from './_firebaseAdmin'; // <<< CORRECTED IMPORT for default 'admin'
 // Import AI SDKs, e.g.,
 import OpenAI from 'openai'; // Ensure 'openai' is in package.json

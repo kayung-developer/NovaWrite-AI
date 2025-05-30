@@ -7,6 +7,7 @@
     "deploy": "vercel --prod"
   },
   "dependencies": {
-    "firebase-admin": "^11.0.0"
+    "firebase-admin": "^11.11.1",
+    "openai": "^4.20.0"
   }
 }

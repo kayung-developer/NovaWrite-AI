@@ -2,7 +2,8 @@
 
 NovaWrite AI is a web-based application designed to be an intelligent partner for crafting high-quality, engaging content. It leverages the power of modern AI models (like GPT-4, Gemini, Claude, and DeepSeek) through Firebase Cloud Functions to offer a rich writing experience across numerous templates and languages.
 
-**Live (Conceptual):** [Link to novawrite-ai app](https://nova-write-ai.vercel.app/)]
+**Live (Conceptual):** [Link to Novawrite AI (https://nova-write-ai.vercel.app/)
+![nova-write-ai_vercel_app](https://github.com/user-attachments/assets/79be8661-69c9-42bb-bc4e-b6f3aee70b6c)
 
 ## Features
 
